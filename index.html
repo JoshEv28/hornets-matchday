@@ -1,0 +1,718 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#111111" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="Hornets Matchday" />
+  <link rel="manifest" href="manifest.webmanifest" />
+  <link rel="icon" href="icon.svg" type="image/svg+xml" />
+  <title>Hornets Matchday</title>
+  <style>
+    :root {
+      --yellow: #f6c800;
+      --yellow-soft: #fff2a6;
+      --black: #111111;
+      --ink: #181818;
+      --muted: #6d6d6d;
+      --line: #dedede;
+      --panel: #ffffff;
+      --bg: #f2f2f2;
+      --pitch: #167441;
+      --pitch-line: rgba(255,255,255,.82);
+      --danger: #b42318;
+      --success: #067647;
+      --warning: #b54708;
+      --radius: 18px;
+      --shadow: 0 10px 28px rgba(0,0,0,.10);
+    }
+
+    * { box-sizing: border-box; }
+    html { background: var(--black); }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background: var(--bg);
+      color: var(--ink);
+      font-family: Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    button, select, input { font: inherit; }
+    button { cursor: pointer; }
+
+    .app-shell { min-height: 100vh; padding-bottom: 84px; }
+
+    .topbar {
+      position: sticky;
+      top: 0;
+      z-index: 30;
+      background: var(--black);
+      color: white;
+      padding: max(12px, env(safe-area-inset-top)) 16px 12px;
+      border-bottom: 4px solid var(--yellow);
+    }
+
+    .topbar-row {
+      max-width: 1180px;
+      margin: 0 auto;
+      display: flex;
+      gap: 12px;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .brand { display: flex; align-items: center; gap: 10px; min-width: 0; }
+    .badge {
+      width: 42px; height: 42px; border-radius: 50%;
+      display: grid; place-items: center;
+      background: var(--yellow); color: var(--black);
+      font-weight: 900; border: 2px solid white;
+      flex: 0 0 auto;
+    }
+    .brand h1 { margin: 0; font-size: 19px; line-height: 1.05; }
+    .brand p { margin: 3px 0 0; font-size: 12px; color: #cfcfcf; }
+
+    .formation-select {
+      width: 118px;
+      border: 1px solid #555;
+      border-radius: 12px;
+      background: #222;
+      color: white;
+      padding: 10px 32px 10px 11px;
+      font-weight: 750;
+    }
+
+    .content {
+      width: min(1180px, 100%);
+      margin: 0 auto;
+      padding: 14px;
+    }
+
+    .status-grid {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 8px;
+      margin-bottom: 12px;
+    }
+
+    .status-card {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 10px 8px;
+      text-align: center;
+    }
+    .status-card strong { display: block; font-size: 20px; }
+    .status-card span { font-size: 11px; color: var(--muted); }
+    .status-card.bad { border-color: #f2a7a0; background: #fff4f3; color: var(--danger); }
+    .status-card.good { border-color: #a6dfc6; background: #f2fbf7; color: var(--success); }
+
+    .desktop-grid {
+      display: grid;
+      grid-template-columns: minmax(0, .95fr) minmax(360px, 1.25fr);
+      gap: 14px;
+      align-items: start;
+    }
+
+    .panel {
+      background: var(--panel);
+      border-radius: var(--radius);
+      border: 1px solid var(--line);
+      box-shadow: var(--shadow);
+      overflow: hidden;
+    }
+
+    .panel-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 14px;
+      border-bottom: 1px solid var(--line);
+    }
+    .panel-head h2 { margin: 0; font-size: 16px; }
+    .panel-head small { color: var(--muted); }
+
+    .actions { display: flex; gap: 8px; }
+    .btn {
+      border: 0;
+      border-radius: 11px;
+      padding: 9px 11px;
+      font-size: 13px;
+      font-weight: 750;
+    }
+    .btn-primary { background: var(--yellow); color: var(--black); }
+    .btn-secondary { background: #ececec; color: var(--ink); }
+    .btn-danger { background: #fee4e2; color: var(--danger); }
+
+    .squad-list { padding: 8px; }
+    .player-card {
+      display: grid;
+      grid-template-columns: minmax(130px, 1fr) 58px 48px 48px 78px 58px;
+      gap: 6px;
+      align-items: center;
+      padding: 9px 8px;
+      border-radius: 12px;
+      border: 1px solid transparent;
+    }
+    .player-card:nth-child(even) { background: #fafafa; }
+    .player-card.unavailable { opacity: .55; }
+    .player-card.duplicate { border-color: #ef8b83; background: #fff1f0; }
+    .player-card.unassigned { border-color: #f5b971; background: #fff8ed; }
+
+    .player-name { min-width: 0; }
+    .player-name strong { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .player-name span { color: var(--muted); font-size: 12px; }
+
+    .tiny-label { display: none; }
+    .check-wrap { text-align: center; }
+    .check-wrap input { width: 20px; height: 20px; accent-color: var(--black); }
+
+    select.compact {
+      width: 100%;
+      min-width: 0;
+      border: 1px solid #cfcfcf;
+      border-radius: 9px;
+      padding: 7px 6px;
+      background: white;
+      color: var(--ink);
+    }
+
+    .pitch-wrap { padding: 12px; }
+    .pitch {
+      position: relative;
+      width: 100%;
+      aspect-ratio: 68 / 105;
+      max-height: 690px;
+      margin: 0 auto;
+      border: 3px solid white;
+      border-radius: 6px;
+      background:
+        repeating-linear-gradient(0deg, rgba(255,255,255,.035) 0 10%, rgba(0,0,0,.035) 10% 20%),
+        var(--pitch);
+      overflow: hidden;
+      box-shadow: inset 0 0 0 2px rgba(0,0,0,.12);
+    }
+
+    .pitch::before,
+    .pitch::after { content: ""; position: absolute; pointer-events: none; }
+    .pitch::before {
+      inset: 50% 0 auto 0;
+      border-top: 2px solid var(--pitch-line);
+    }
+    .pitch::after {
+      width: 19%; aspect-ratio: 1; border: 2px solid var(--pitch-line); border-radius: 50%;
+      left: 50%; top: 50%; transform: translate(-50%, -50%);
+    }
+
+    .box-top, .box-bottom {
+      position: absolute; left: 20%; width: 60%; height: 16%;
+      border: 2px solid var(--pitch-line); pointer-events: none;
+    }
+    .box-top { top: -2px; border-top: 0; }
+    .box-bottom { bottom: -2px; border-bottom: 0; }
+
+    .player-node {
+      position: absolute;
+      transform: translate(-50%, -50%);
+      width: 26%;
+      text-align: center;
+      transition: left .25s ease, top .25s ease;
+      z-index: 5;
+    }
+    .shirt {
+      width: 34px; height: 34px;
+      margin: 0 auto 3px;
+      display: grid; place-items: center;
+      border-radius: 50%;
+      background: var(--yellow);
+      border: 2px solid var(--black);
+      font-weight: 900;
+      color: var(--black);
+      box-shadow: 0 2px 6px rgba(0,0,0,.25);
+    }
+    .node-name {
+      display: inline-block;
+      max-width: 100%;
+      padding: 3px 6px;
+      border-radius: 7px;
+      background: rgba(0,0,0,.72);
+      color: white;
+      font-size: 11px;
+      line-height: 1.15;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .node-name.empty { color: rgba(255,255,255,.65); }
+
+    .bench {
+      display: grid;
+      grid-template-columns: repeat(5, minmax(0, 1fr));
+      gap: 6px;
+      margin-top: 10px;
+    }
+    .bench-card {
+      min-height: 76px;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 7px 5px;
+      text-align: center;
+      background: white;
+    }
+    .bench-number { font-weight: 900; color: var(--black); }
+    .bench-name { font-size: 11px; margin-top: 4px; line-height: 1.15; }
+    .bench-pos { font-size: 10px; color: var(--muted); margin-top: 3px; }
+
+    .bottom-nav {
+      display: none;
+      position: fixed;
+      left: 0; right: 0; bottom: 0;
+      z-index: 40;
+      padding: 8px 12px calc(8px + env(safe-area-inset-bottom));
+      background: rgba(17,17,17,.96);
+      border-top: 2px solid var(--yellow);
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+    }
+    .nav-btn {
+      border: 0;
+      border-radius: 12px;
+      padding: 11px;
+      background: #2a2a2a;
+      color: white;
+      font-weight: 750;
+    }
+    .nav-btn.active { background: var(--yellow); color: var(--black); }
+
+    .modal-backdrop {
+      position: fixed; inset: 0; z-index: 60;
+      background: rgba(0,0,0,.62);
+      display: none; place-items: end center;
+    }
+    .modal-backdrop.open { display: grid; }
+    .modal {
+      width: min(560px, 100%);
+      max-height: 88vh;
+      overflow: auto;
+      background: white;
+      border-radius: 22px 22px 0 0;
+      padding: 18px;
+    }
+    .modal h3 { margin: 0 0 14px; }
+    .form-grid { display: grid; gap: 12px; }
+    .form-grid label { display: grid; gap: 5px; font-size: 13px; font-weight: 700; }
+    .form-grid input, .form-grid select {
+      border: 1px solid #cfcfcf; border-radius: 11px; padding: 11px; width: 100%;
+    }
+    .modal-actions { display: flex; gap: 8px; margin-top: 16px; }
+    .modal-actions .btn { flex: 1; padding: 12px; }
+
+    .empty-message { padding: 20px; text-align: center; color: var(--muted); }
+
+    @media (max-width: 820px) {
+      .content { padding: 10px; }
+      .desktop-grid { display: block; }
+      .panel { box-shadow: none; border-radius: 14px; }
+      .panel + .panel { margin-top: 10px; }
+      .view-section { display: none; }
+      .view-section.active { display: block; }
+      .bottom-nav { display: grid; }
+      .status-grid { grid-template-columns: repeat(4, 1fr); }
+      .status-card strong { font-size: 18px; }
+      .player-card {
+        grid-template-columns: minmax(115px, 1fr) 52px 44px 44px 72px 52px;
+        padding: 8px 4px;
+        gap: 4px;
+      }
+      .player-name strong { font-size: 13px; }
+      .player-name span { font-size: 11px; }
+      select.compact { font-size: 12px; padding: 7px 3px; }
+      .pitch-wrap { padding: 8px; }
+      .node-name { font-size: 10px; }
+      .shirt { width: 31px; height: 31px; font-size: 13px; }
+    }
+
+    @media (max-width: 480px) {
+      .brand p { display: none; }
+      .brand h1 { font-size: 17px; }
+      .badge { width: 38px; height: 38px; }
+      .formation-select { width: 108px; padding: 9px 27px 9px 9px; }
+      .status-grid { gap: 5px; }
+      .status-card { padding: 8px 4px; }
+      .status-card strong { font-size: 16px; }
+      .status-card span { font-size: 9px; }
+      .panel-head { padding: 11px; }
+      .player-card {
+        grid-template-columns: minmax(100px, 1fr) 42px 37px 37px 67px 45px;
+        font-size: 12px;
+      }
+      .check-wrap input { width: 18px; height: 18px; }
+      .bench-card { min-height: 70px; padding: 5px 3px; }
+      .bench-name { font-size: 9px; }
+      .bench-pos { font-size: 9px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="app-shell">
+    <header class="topbar">
+      <div class="topbar-row">
+        <div class="brand">
+          <div class="badge">DLC</div>
+          <div>
+            <h1>Hornets Matchday</h1>
+            <p>Debenham LC U23</p>
+          </div>
+        </div>
+        <select id="formationSelect" class="formation-select" aria-label="Formation">
+          <option value="4-3-3">4-3-3</option>
+          <option value="3-5-2">3-5-2</option>
+        </select>
+      </div>
+    </header>
+
+    <main class="content">
+      <section class="status-grid" aria-label="Squad status">
+        <div id="availableStatus" class="status-card"><strong>0</strong><span>Available</span></div>
+        <div id="startersStatus" class="status-card"><strong>0/11</strong><span>Starters</span></div>
+        <div id="subsStatus" class="status-card"><strong>0/5</strong><span>Subs</span></div>
+        <div id="issuesStatus" class="status-card"><strong>0</strong><span>Issues</span></div>
+      </section>
+
+      <div class="desktop-grid">
+        <section id="squadView" class="panel view-section active">
+          <div class="panel-head">
+            <div>
+              <h2>Squad</h2>
+              <small>Availability, selection and roles</small>
+            </div>
+            <div class="actions">
+              <button id="addPlayerBtn" class="btn btn-primary" type="button">+ Player</button>
+              <button id="clearBtn" class="btn btn-secondary" type="button">Clear XI</button>
+            </div>
+          </div>
+          <div id="squadList" class="squad-list"></div>
+        </section>
+
+        <section id="pitchView" class="panel view-section">
+          <div class="panel-head">
+            <div>
+              <h2>Team Sheet</h2>
+              <small id="pitchSubtitle">3-5-2</small>
+            </div>
+            <div class="actions">
+              <button id="resetBtn" class="btn btn-danger" type="button">Reset app</button>
+            </div>
+          </div>
+          <div class="pitch-wrap">
+            <div id="pitch" class="pitch" aria-label="Football pitch">
+              <div class="box-top"></div>
+              <div class="box-bottom"></div>
+            </div>
+            <div id="bench" class="bench" aria-label="Substitutes"></div>
+          </div>
+        </section>
+      </div>
+    </main>
+
+    <nav class="bottom-nav" aria-label="App navigation">
+      <button class="nav-btn active" data-view="squadView" type="button">Squad</button>
+      <button class="nav-btn" data-view="pitchView" type="button">Pitch</button>
+    </nav>
+  </div>
+
+  <div id="playerModal" class="modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="playerModalTitle">
+    <div class="modal">
+      <h3 id="playerModalTitle">Add player</h3>
+      <div class="form-grid">
+        <label>Name
+          <input id="playerNameInput" autocomplete="off" />
+        </label>
+        <label>Main position
+          <select id="playerPositionInput">
+            <option>GK</option><option>FB</option><option>CB</option><option>CM</option><option>W</option><option>ST</option>
+          </select>
+        </label>
+      </div>
+      <div class="modal-actions">
+        <button id="cancelModalBtn" class="btn btn-secondary" type="button">Cancel</button>
+        <button id="savePlayerBtn" class="btn btn-primary" type="button">Add player</button>
+      </div>
+    </div>
+  </div>
+
+<script>
+(() => {
+  const STORAGE_KEY = 'hornets-matchday-v01';
+
+  const samplePlayers = [
+    {name:'Ethan Lewin',position:'GK',available:true,start:false,sub:false,pitch:'',cap:''},
+    {name:'Max Smith',position:'GK',available:true,start:true,sub:false,pitch:'GK',cap:''},
+    {name:'Jamie Jennings',position:'FB',available:true,start:false,sub:true,pitch:'',cap:''},
+    {name:'George Smith',position:'FB',available:false,start:false,sub:false,pitch:'',cap:''},
+    {name:'Dom Quinton',position:'FB',available:true,start:false,sub:false,pitch:'',cap:''},
+    {name:'Will Berkley',position:'FB',available:true,start:false,sub:true,pitch:'',cap:''},
+    {name:'Dallas Carroll',position:'FB',available:false,start:false,sub:false,pitch:'',cap:''},
+    {name:'Louis Gardner',position:'FB',available:false,start:false,sub:false,pitch:'',cap:''},
+    {name:'Tommy Allen',position:'FB',available:true,start:true,sub:false,pitch:'LWB',cap:''},
+    {name:'Rees Lillistone',position:'CB',available:true,start:true,sub:false,pitch:'RCB',cap:''},
+    {name:'Kyran Lewin',position:'CB',available:true,start:false,sub:false,pitch:'',cap:''},
+    {name:'Toby Dean',position:'CB',available:true,start:true,sub:false,pitch:'CB',cap:''},
+    {name:'Freddie McLennan',position:'CB',available:true,start:false,sub:true,pitch:'',cap:''},
+    {name:'Garry Burdett',position:'CB',available:false,start:false,sub:false,pitch:'',cap:''},
+    {name:'Fred Mallett',position:'CM',available:true,start:true,sub:false,pitch:'LCB',cap:''},
+    {name:'Kev Barker',position:'CM',available:true,start:true,sub:false,pitch:'CM',cap:''},
+    {name:'Alex Jackson',position:'CM',available:true,start:true,sub:false,pitch:'ST2',cap:'C'},
+    {name:'Charlie Hill',position:'CM',available:true,start:true,sub:false,pitch:'LCM',cap:''},
+    {name:'Harrison Berkley',position:'CM',available:true,start:false,sub:false,pitch:'',cap:''},
+    {name:'Jacob Cumberland',position:'CM',available:false,start:false,sub:false,pitch:'',cap:''},
+    {name:'Kyle Bloomfield',position:'CM',available:true,start:false,sub:true,pitch:'',cap:''},
+    {name:'James Fiddaman',position:'W',available:true,start:true,sub:false,pitch:'RCM',cap:''},
+    {name:'Charlie Maclean',position:'W',available:true,start:true,sub:false,pitch:'RWB',cap:''},
+    {name:'Ollie Parkinson',position:'W',available:true,start:false,sub:true,pitch:'',cap:''},
+    {name:'Harry Tiernay',position:'W',available:true,start:false,sub:false,pitch:'',cap:''},
+    {name:'Logan Wincomb',position:'W',available:false,start:false,sub:false,pitch:'',cap:''},
+    {name:'Elliot Whayman',position:'ST',available:true,start:true,sub:false,pitch:'ST1',cap:''},
+    {name:'Elliot Hammond',position:'ST',available:false,start:false,sub:false,pitch:'',cap:''},
+    {name:'James Shannon',position:'ST',available:true,start:false,sub:false,pitch:'',cap:''},
+    {name:'Ethan Smy',position:'ST',available:false,start:false,sub:false,pitch:'',cap:''}
+  ];
+
+  const formations = {
+    '4-3-3': {
+      positions: ['GK','RB','RCB','LCB','LB','CM','RCM','LCM','RW','ST','LW'],
+      numbers: {GK:1,RB:2,LB:3,RCB:4,LCB:5,CM:6,RW:7,RCM:8,ST:9,LCM:10,LW:11},
+      coords: {
+        GK:[50,10], RB:[16,26], RCB:[37,25], LCB:[63,25], LB:[84,26],
+        CM:[50,43], RCM:[28,53], LCM:[72,53], RW:[27,71], ST:[50,80], LW:[73,71]
+      }
+    },
+    '3-5-2': {
+      positions: ['GK','RWB','RCB','CB','LCB','LWB','LCM','CM','RCM','ST1','ST2'],
+      numbers: {GK:1,RWB:2,RCB:4,CB:6,LCB:5,LWB:3,LCM:10,CM:8,RCM:7,ST1:11,ST2:9},
+      coords: {
+        GK:[50,10], RWB:[88,44], RCB:[72,25], CB:[50,23], LCB:[28,25], LWB:[12,44],
+        LCM:[32,50], CM:[50,54], RCM:[68,50], ST1:[38,79], ST2:[62,79]
+      }
+    }
+  };
+
+  const conversion = {
+    '4-3-3>3-5-2': {GK:'GK',RB:'RWB',RCB:'RCB',LCB:'CB',LB:'LCB',RCM:'CM',CM:'RCM',LCM:'LCM',RW:'ST2',ST:'ST1',LW:'LWB'},
+    '3-5-2>4-3-3': {GK:'GK',RWB:'RB',RCB:'RCB',CB:'LCB',LCB:'LB',CM:'RCM',RCM:'CM',LCM:'LCM',ST2:'RW',ST1:'ST',LWB:'LW'}
+  };
+
+  let state = loadState();
+
+  const els = {
+    formation: document.getElementById('formationSelect'),
+    list: document.getElementById('squadList'),
+    pitch: document.getElementById('pitch'),
+    bench: document.getElementById('bench'),
+    available: document.getElementById('availableStatus'),
+    starters: document.getElementById('startersStatus'),
+    subs: document.getElementById('subsStatus'),
+    issues: document.getElementById('issuesStatus'),
+    subtitle: document.getElementById('pitchSubtitle'),
+    modal: document.getElementById('playerModal'),
+    nameInput: document.getElementById('playerNameInput'),
+    positionInput: document.getElementById('playerPositionInput')
+  };
+
+  function loadState() {
+    try {
+      const saved = JSON.parse(localStorage.getItem(STORAGE_KEY));
+      if (saved && Array.isArray(saved.players)) return saved;
+    } catch (_) {}
+    return { formation: '3-5-2', players: structuredClone(samplePlayers) };
+  }
+
+  function saveState() {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+  }
+
+  function escapeHtml(value) {
+    return String(value).replace(/[&<>'"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]));
+  }
+
+  function assignedCounts() {
+    const counts = {};
+    state.players.filter(p => p.start && p.pitch).forEach(p => counts[p.pitch] = (counts[p.pitch] || 0) + 1);
+    return counts;
+  }
+
+  function roleLabel(player) {
+    return player.cap ? ` (${player.cap})` : '';
+  }
+
+  function render() {
+    els.formation.value = state.formation;
+    els.subtitle.textContent = state.formation;
+    renderStatus();
+    renderSquad();
+    renderPitch();
+    renderBench();
+    saveState();
+  }
+
+  function renderStatus() {
+    const available = state.players.filter(p => p.available).length;
+    const starters = state.players.filter(p => p.start).length;
+    const subs = state.players.filter(p => p.sub).length;
+    const counts = assignedCounts();
+    const duplicates = Object.values(counts).filter(n => n > 1).length;
+    const unassigned = state.players.filter(p => p.start && !p.pitch).length;
+    const issues = duplicates + unassigned + Math.abs(11 - starters) + Math.max(0, subs - 5);
+
+    setStatus(els.available, String(available), 'Available', false);
+    setStatus(els.starters, `${starters}/11`, 'Starters', starters === 11, starters !== 11);
+    setStatus(els.subs, `${subs}/5`, 'Subs', subs === 5, subs > 5);
+    setStatus(els.issues, String(issues), duplicates ? `${duplicates} duplicate` : unassigned ? `${unassigned} unassigned` : 'Issues', issues === 0, issues > 0);
+  }
+
+  function setStatus(el, value, label, good, bad) {
+    el.className = 'status-card' + (good ? ' good' : '') + (bad ? ' bad' : '');
+    el.innerHTML = `<strong>${escapeHtml(value)}</strong><span>${escapeHtml(label)}</span>`;
+  }
+
+  function renderSquad() {
+    const counts = assignedCounts();
+    const formationPositions = formations[state.formation].positions;
+    els.list.innerHTML = state.players.map((p, index) => {
+      const duplicate = p.start && p.pitch && counts[p.pitch] > 1;
+      const unassigned = p.start && !p.pitch;
+      const options = ['<option value="">—</option>'].concat(formationPositions.map(pos => `<option value="${pos}" ${p.pitch===pos?'selected':''}>${pos}</option>`)).join('');
+      return `<div class="player-card ${p.available?'':'unavailable'} ${duplicate?'duplicate':''} ${unassigned?'unassigned':''}" data-index="${index}">
+        <div class="player-name"><strong>${escapeHtml(p.name)}</strong><span>${escapeHtml(p.position)}</span></div>
+        <div class="check-wrap"><input type="checkbox" data-field="available" ${p.available?'checked':''} aria-label="${escapeHtml(p.name)} available"></div>
+        <div class="check-wrap"><input type="checkbox" data-field="start" ${p.start?'checked':''} aria-label="${escapeHtml(p.name)} starter"></div>
+        <div class="check-wrap"><input type="checkbox" data-field="sub" ${p.sub?'checked':''} aria-label="${escapeHtml(p.name)} substitute"></div>
+        <select class="compact" data-field="pitch" aria-label="${escapeHtml(p.name)} pitch position">${options}</select>
+        <select class="compact" data-field="cap" aria-label="${escapeHtml(p.name)} captain role">
+          <option value="" ${!p.cap?'selected':''}>—</option>
+          <option value="C" ${p.cap==='C'?'selected':''}>C</option>
+          <option value="VC" ${p.cap==='VC'?'selected':''}>VC</option>
+        </select>
+      </div>`;
+    }).join('') || '<div class="empty-message">No players yet.</div>';
+  }
+
+  function renderPitch() {
+    els.pitch.querySelectorAll('.player-node').forEach(n => n.remove());
+    const formation = formations[state.formation];
+    formation.positions.forEach(pos => {
+      const player = state.players.find(p => p.start && p.pitch === pos);
+      const [left, top] = formation.coords[pos];
+      const node = document.createElement('div');
+      node.className = 'player-node';
+      node.style.left = `${left}%`;
+      node.style.top = `${top}%`;
+      node.innerHTML = `<div class="shirt">${formation.numbers[pos] ?? ''}</div>
+        <div class="node-name ${player?'':'empty'}">${player ? escapeHtml(player.name + roleLabel(player)) : escapeHtml(pos)}</div>`;
+      els.pitch.appendChild(node);
+    });
+  }
+
+  function renderBench() {
+    const benchNumbers = [12,14,15,16,17];
+    const subs = state.players.filter(p => p.sub).slice(0,5);
+    els.bench.innerHTML = benchNumbers.map((number, i) => {
+      const p = subs[i];
+      return `<div class="bench-card"><div class="bench-number">${number}</div><div class="bench-name">${p?escapeHtml(p.name + roleLabel(p)):'—'}</div><div class="bench-pos">${p?escapeHtml(p.position):''}</div></div>`;
+    }).join('');
+  }
+
+  els.list.addEventListener('change', event => {
+    const card = event.target.closest('.player-card');
+    if (!card) return;
+    const index = Number(card.dataset.index);
+    const field = event.target.dataset.field;
+    const player = state.players[index];
+    if (!player || !field) return;
+
+    if (event.target.type === 'checkbox') player[field] = event.target.checked;
+    else player[field] = event.target.value;
+
+    if (field === 'start' && player.start) {
+      player.sub = false;
+      player.available = true;
+    }
+    if (field === 'sub' && player.sub) {
+      player.start = false;
+      player.pitch = '';
+      player.available = true;
+    }
+    if (field === 'available' && !player.available) {
+      player.start = false;
+      player.sub = false;
+      player.pitch = '';
+      player.cap = '';
+    }
+    if (field === 'cap' && player.cap) {
+      state.players.forEach((other, i) => {
+        if (i !== index && other.cap === player.cap) other.cap = '';
+      });
+    }
+    render();
+  });
+
+  els.formation.addEventListener('change', () => {
+    const oldFormation = state.formation;
+    const newFormation = els.formation.value;
+    const map = conversion[`${oldFormation}>${newFormation}`] || {};
+    state.players.forEach(p => {
+      if (p.pitch) p.pitch = map[p.pitch] || '';
+    });
+    state.formation = newFormation;
+    render();
+  });
+
+  document.getElementById('clearBtn').addEventListener('click', () => {
+    if (!confirm('Clear starters, subs, pitch positions and captain roles?')) return;
+    state.players.forEach(p => { p.start=false; p.sub=false; p.pitch=''; p.cap=''; });
+    render();
+  });
+
+  document.getElementById('resetBtn').addEventListener('click', () => {
+    if (!confirm('Reset the app to the squad imported from your Excel workbook?')) return;
+    state = {formation:'3-5-2', players:structuredClone(samplePlayers)};
+    render();
+  });
+
+  document.getElementById('addPlayerBtn').addEventListener('click', () => {
+    els.nameInput.value = '';
+    els.positionInput.value = 'CM';
+    els.modal.classList.add('open');
+    setTimeout(() => els.nameInput.focus(), 50);
+  });
+
+  document.getElementById('cancelModalBtn').addEventListener('click', closeModal);
+  els.modal.addEventListener('click', e => { if (e.target === els.modal) closeModal(); });
+  function closeModal(){ els.modal.classList.remove('open'); }
+
+  document.getElementById('savePlayerBtn').addEventListener('click', () => {
+    const name = els.nameInput.value.trim();
+    if (!name) { els.nameInput.focus(); return; }
+    state.players.push({name,position:els.positionInput.value,available:true,start:false,sub:false,pitch:'',cap:''});
+    closeModal();
+    render();
+  });
+
+  document.querySelectorAll('.nav-btn').forEach(btn => btn.addEventListener('click', () => {
+    document.querySelectorAll('.nav-btn').forEach(b => b.classList.toggle('active', b === btn));
+    document.querySelectorAll('.view-section').forEach(v => v.classList.toggle('active', v.id === btn.dataset.view));
+  }));
+
+  if ('serviceWorker' in navigator && location.protocol.startsWith('http')) {
+    navigator.serviceWorker.register('./sw.js').catch(() => {});
+  }
+
+  render();
+})();
+</script>
+</body>
+</html>

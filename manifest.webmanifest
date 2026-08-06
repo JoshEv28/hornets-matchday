@@ -1,0 +1,13 @@
+{
+  "name": "Hornets Matchday",
+  "short_name": "Hornets",
+  "description": "Debenham LC U23 matchday team selector",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#111111",
+  "theme_color": "#111111",
+  "icons": [
+    {"src": "icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable"}
+  ]
+}
